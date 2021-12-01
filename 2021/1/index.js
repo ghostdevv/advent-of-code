@@ -1,7 +1,12 @@
 import { readFileSync } from 'fs';
 
-const windowed = (array) => array.reduce((acc, item, index) => [...acc, array.slice(index, index + 3)], []);
-const sumArray = array => array.reduce((a, b) => a + b);
+const windowed = (array) =>
+    array.reduce(
+        (acc, item, index) => [...acc, array.slice(index, index + 3)],
+        [],
+    );
+    
+const sumArray = (array) => array.reduce((a, b) => a + b);
 
 const one = (arr) =>
     arr.reduce(
@@ -10,7 +15,7 @@ const one = (arr) =>
         0,
     );
 
-const two = (arr) => one(windowed(arr).map(sumArray))
+const two = (arr) => one(windowed(arr).map(sumArray));
 
 // .
 
