@@ -1,4 +1,4 @@
-import { read, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 
 const windowed = (array) => array.reduce((acc, item, index) => [...acc, array.slice(index, index + 3)], []);
 const sumArray = array => array.reduce((a, b) => a + b);
