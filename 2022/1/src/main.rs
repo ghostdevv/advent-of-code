@@ -1,42 +1,24 @@
 use std::fs;
 
-// Still learning rust so bear with me XD
-
 fn main() {
     let contents = fs::read_to_string("src/input.txt").expect("Unable to read input");
 
-    let mut item_groups: Vec<Vec<String>> = vec![];
-    let mut current_group: Vec<String> = vec![];
+    let mut calorie_counts = contents
+        // Replace all \n with a comma
+        .replace("\n", ",")
+        // Because there is a \n\n to group numbers there will be a double comma in places
+        .split(",,")
+        // We can split by that comma to get each group, split that into a vec, and then get the sum of the vec
+        .map(|item| item.split(",").map(|n| n.parse::<u32>().unwrap()).sum())
+        .collect::<Vec<u32>>();
 
-    for item in contents.lines() {
-        if item.trim() == "" {
-            item_groups.push(current_group.clone());
-            current_group = vec![];
-        } else {
-            current_group.push(item.to_string());
-        }
-    }
+    // Sort from highest to lowest
+    calorie_counts.sort_by(|a, b| b.cmp(a));
 
-    let mut calorie_counts: Vec<u32> = vec![];
-
-    for group in item_groups {
-        let mut count: u32 = 0;
-
-        for item in group {
-            count += item.parse::<u32>().unwrap();
-        }
-
-        calorie_counts.push(count);
-    }
-
-    calorie_counts.sort();
-
-    let mut top_three = calorie_counts.iter().rev().take(3).peekable();
-
-    println!("Highest calorie count is: {:?}", top_three.peek());
+    println!("Highest Calorie Count: {:?}", calorie_counts.first());
 
     println!(
-        "Sum of top three calorie counts is: {:?}",
-        top_three.sum::<u32>()
-    )
+        "Sum of top three calorie counts: {:?}",
+        calorie_counts.iter().take(3).sum::<u32>()
+    );
 }
