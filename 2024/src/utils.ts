@@ -1,7 +1,7 @@
 /**
  * Day utility fn for the day files.
  */
-export function day(cb: () => Promise<void>) {
+export function day(cb: DayRunner) {
     return cb;
 }
 
