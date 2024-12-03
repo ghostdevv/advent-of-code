@@ -1,5 +1,6 @@
 import { intro, isCancel, outro, select, type SelectOptions } from '@clack/prompts';
-import { ensureDir, existsSync } from '@std/fs';
+import { ensureDir, expandGlob } from '@std/fs';
+import { gray, red, yellow } from '@std/fmt/colors';
 import { parseArgs } from '@std/cli';
 import { join } from '@std/path';
 import dedent from 'dedent';
@@ -20,20 +21,19 @@ class Day {
      * A function to run the day's code.
      */
     async run() {
-        const path = join(this.path, './main.ts');
+        const files = await Array.fromAsync(expandGlob('*.aoc.ts', { root: this.path }));
 
-        if (!existsSync(path)) {
-            throw new Error(`No main.ts found for day ${this} (${path})`);
+        if (!files.length) {
+            exit(`No files found for day ${this}`);
         }
 
-        const mod = await import(path);
-        const runner = mod.run as DayRunner | undefined;
+        for await (const file of expandGlob('*.aoc.ts', { root: this.path })) {
+            const mod: { run: DayRunner } = await import(file.path);
 
-        if (!runner) {
-            throw new Error(`Unable to find runner for day ${this} (${path})`);
+            console.log(yellow(`AOC ${this} `), gray(`Running ${file.name}`));
+            await mod.run();
+            console.log('');
         }
-
-        await runner();
     }
 
     /**
@@ -54,6 +54,11 @@ function handle_cancel<T>(value: T): asserts value is Exclude<T, symbol> {
     }
 }
 
+function exit(error: string): never {
+    console.error(red('AOC    '), error);
+    Deno.exit(1);
+}
+
 /**
  * Turn a day number into a string. It makes sure all days are two digits.
  */
@@ -72,8 +77,7 @@ const CURRENT_DAY = new Date().getDate();
 const args = parseArgs<{ day?: boolean | number }>(Deno.args);
 
 if (typeof args.day == 'boolean') {
-    console.error('day arg must be a number');
-    Deno.exit(0);
+    exit('day arg must be a number');
 }
 
 const days_map = new Map<number, Day>();
@@ -86,10 +90,8 @@ for await (const f of Deno.readDir(DAYS_FOLDER)) {
 }
 
 let day = days_map.get(args.day!) || null;
-let has_run_clack = false;
 
 if (!day) {
-    has_run_clack = true;
     intro('Advent of Code 2024');
 
     const options: SelectOptions<Day | number>['options'] = [];
@@ -119,10 +121,10 @@ if (!day) {
 
         await ensureDir(path);
         await Deno.writeTextFile(
-            join(path, './main.ts'),
+            join(path, './one.aoc.ts'),
             dedent`
                 export function run() {
-                    console.log('Day ${display_day(choice)}');
+                    console.log('Day ${display_day(choice)} Part One');
                 }
             `,
         );
@@ -131,13 +133,8 @@ if (!day) {
     } else {
         day = choice;
     }
-}
 
-if (has_run_clack) {
     outro(`Running day ${day}...`);
-} else {
-    console.clear();
-    console.log(`Running day ${day}...\n`);
 }
 
 await day.run();
