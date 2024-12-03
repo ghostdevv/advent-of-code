@@ -1,6 +1,6 @@
 {
 	"tasks": {
-		"dev": "deno run --allow-read --allow-env --watch src/cli.ts",
+		"day": "deno run --allow-read --allow-write --allow-env --watch src/cli.ts --day",
 		"run": "deno run --allow-read --allow-write --allow-env src/cli.ts"
 	},
 	"fmt": {

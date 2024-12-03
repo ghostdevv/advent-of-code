@@ -65,7 +65,12 @@ function display_day(day: number) {
 const DAYS_FOLDER = join(import.meta.dirname!, './days');
 const CURRENT_DAY = new Date().getDate();
 
-intro('Advent of Code 2024');
+const args = parseArgs<{ day?: boolean | number }>(Deno.args);
+
+if (typeof args.day == 'boolean') {
+    console.error('day arg must be a number');
+    Deno.exit(0);
+}
 
 const days_map = new Map<number, Day>();
 
@@ -76,10 +81,13 @@ for await (const f of Deno.readDir(DAYS_FOLDER)) {
     }
 }
 
-const args = parseArgs(Deno.args);
-let day = days_map.get(args._.at(0) as number) || null;
+let day = days_map.get(args.day!) || null;
+let has_run_clack = false;
 
 if (!day) {
+    has_run_clack = true;
+    intro('Advent of Code 2024');
+
     const options: SelectOptions<Day | number>['options'] = [];
 
     for (let i = 1; i <= 24; i++) {
@@ -123,6 +131,11 @@ if (!day) {
     }
 }
 
-outro(`Running day ${day}...`);
+if (has_run_clack) {
+    outro(`Running day ${day}...`);
+} else {
+    console.clear();
+    console.log(`Running day ${day}...\n`);
+}
 
 await day.run();
