@@ -119,15 +119,15 @@ if (!day) {
     if (typeof choice == 'number') {
         const path = join(DAYS_FOLDER, `./${display_day(choice)}`);
 
+        const tpl = dedent`
+            export function run() {
+                console.log('Day ${display_day(choice)} Part One');
+            }
+        `;
+
         await ensureDir(path);
-        await Deno.writeTextFile(
-            join(path, './one.aoc.ts'),
-            dedent`
-                export function run() {
-                    console.log('Day ${display_day(choice)} Part One');
-                }
-            `,
-        );
+        await Deno.writeTextFile(join(path, './one.aoc.ts'), tpl);
+        await Deno.writeTextFile(join(path, './two.aoc.ts'), tpl);
 
         day = new Day(choice, path);
     } else {
