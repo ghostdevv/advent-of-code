@@ -1,6 +1,5 @@
 import { intro, isCancel, outro, select, type SelectOptions } from '@clack/prompts';
 import { ensureDir, existsSync } from '@std/fs';
-import type { DayRunner } from './utils.ts';
 import { parseArgs } from '@std/cli';
 import { join } from '@std/path';
 import dedent from 'dedent';
@@ -28,7 +27,7 @@ class Day {
         }
 
         const mod = await import(path);
-        const runner = mod.default as DayRunner | undefined;
+        const runner = mod.run as DayRunner | undefined;
 
         if (!runner) {
             throw new Error(`Unable to find runner for day ${this} (${path})`);
@@ -61,6 +60,11 @@ function handle_cancel<T>(value: T): asserts value is Exclude<T, symbol> {
 function display_day(day: number) {
     return `${day < 10 ? '0' : ''}${day}`;
 }
+
+/**
+ * The type of the `run` function which a day file exports.
+ */
+type DayRunner = () => void | Promise<void>;
 
 const DAYS_FOLDER = join(import.meta.dirname!, './days');
 const CURRENT_DAY = new Date().getDate();
@@ -117,11 +121,9 @@ if (!day) {
         await Deno.writeTextFile(
             join(path, './main.ts'),
             dedent`
-                import { day } from '../../utils.ts';
-    
-                export default day(async () => {
+                export function run() {
                     console.log('Day ${display_day(choice)}');
-                });
+                }
             `,
         );
 
