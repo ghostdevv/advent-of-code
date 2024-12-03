@@ -6,6 +6,7 @@ import { join } from '@std/path';
 import dedent from 'dedent';
 
 const DAYS_FOLDER = join(import.meta.dirname!, './days');
+const CURRENT_DAY = new Date().getDate();
 
 class Day {
     constructor(
@@ -28,7 +29,7 @@ class Day {
         if (!existsSync(path)) {
             throw new Error(`No main.ts found for day ${this} (${path})`);
         }
-        j;
+
         const mod = await import(path);
         const runner = mod.default as DayRunner | undefined;
 
@@ -67,36 +68,36 @@ function display_day(day: number) {
 /**
  * Get the day to run. First checking the args, then prompting the user.
  */
-async function get_day(days: Day[]): Promise<Day> {
+async function get_day(days: Map<number, Day>): Promise<Day> {
     const { _: args } = parseArgs(Deno.args);
 
-    const args_day = days.find(({ day }) => day === args.at(0)) || null;
+    const args_day = days.get(args.at(0) as number) || null;
     if (args_day) return args_day;
 
-    const current_day = new Date().getDay();
+    const options: SelectOptions<Day | number>['options'] = [];
 
-    const options: SelectOptions<Day | 'NEW'>['options'] = days.map((day) => ({
-        label: `${day}`,
-        value: day,
-    }));
-
-    if (!days.find((day) => day.day == current_day)) {
-        options.unshift({
-            label: `Create ${display_day(current_day)}`,
-            value: 'NEW',
-            hint: `Today is missing, create it?`,
-        });
+    for (let i = 1; i <= 24; i++) {
+        if (days.has(i)) {
+            const day = days.get(i)!;
+            options.push({ label: `${day}`, value: day });
+        } else if (i <= CURRENT_DAY) {
+            options.push({
+                label: `Create ${display_day(i)}`,
+                hint: `Day missing, do you want to create it?`,
+                value: i,
+            });
+        }
     }
 
-    const day = await select<Day | 'NEW'>({
+    const day = await select<Day | number>({
         message: 'Please pick a day to run',
         options,
     });
 
     handle_cancel(day);
 
-    if (day == 'NEW') {
-        const path = join(DAYS_FOLDER, `./${display_day(current_day)}`);
+    if (typeof day == 'number') {
+        const path = join(DAYS_FOLDER, `./${display_day(day)}`);
 
         await ensureDir(path);
         await Deno.writeTextFile(
@@ -105,12 +106,12 @@ async function get_day(days: Day[]): Promise<Day> {
                 import { day } from '../../utils.ts';
 
                 export default day(async () => {
-                    console.log('Day ${display_day(current_day)}');
+                    console.log('Day ${display_day(day)}');
                 });
             `,
         );
 
-        return new Day(current_day, path);
+        return new Day(day, path);
     }
 
     return day;
@@ -118,16 +119,16 @@ async function get_day(days: Day[]): Promise<Day> {
 
 intro('Advent of Code 2024');
 
-const days = (await Array.fromAsync(Deno.readDir(DAYS_FOLDER)))
-    .filter((f) => f.isDirectory && /^\d{2}$/.test(f.name))
-    .map((f) => new Day(Number.parseInt(f.name), join(DAYS_FOLDER, f.name)))
-    .sort((a, b) => b.day - a.day);
+const days_map = new Map<number, Day>();
 
-if (days.length == 0) {
-    throw new Error('No days found!');
+for await (const f of Deno.readDir(DAYS_FOLDER)) {
+    if (f.isDirectory && /^\d{2}$/.test(f.name)) {
+        const day_num = Number.parseInt(f.name);
+        days_map.set(day_num, new Day(day_num, join(DAYS_FOLDER, f.name)));
+    }
 }
 
-const day = await get_day(days);
+const day = await get_day(days_map);
 
 outro(`Running day ${day}...`);
 
