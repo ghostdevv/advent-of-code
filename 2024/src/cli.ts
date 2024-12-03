@@ -5,9 +5,6 @@ import { parseArgs } from '@std/cli';
 import { join } from '@std/path';
 import dedent from 'dedent';
 
-const DAYS_FOLDER = join(import.meta.dirname!, './days');
-const CURRENT_DAY = new Date().getDate();
-
 class Day {
     constructor(
         /**
@@ -65,57 +62,8 @@ function display_day(day: number) {
     return `${day < 10 ? '0' : ''}${day}`;
 }
 
-/**
- * Get the day to run. First checking the args, then prompting the user.
- */
-async function get_day(days: Map<number, Day>): Promise<Day> {
-    const { _: args } = parseArgs(Deno.args);
-
-    const args_day = days.get(args.at(0) as number) || null;
-    if (args_day) return args_day;
-
-    const options: SelectOptions<Day | number>['options'] = [];
-
-    for (let i = 1; i <= 24; i++) {
-        if (days.has(i)) {
-            const day = days.get(i)!;
-            options.push({ label: `${day}`, value: day });
-        } else if (i <= CURRENT_DAY) {
-            options.push({
-                label: `Create ${display_day(i)}`,
-                hint: `Day missing, do you want to create it?`,
-                value: i,
-            });
-        }
-    }
-
-    const day = await select<Day | number>({
-        message: 'Please pick a day to run',
-        options,
-    });
-
-    handle_cancel(day);
-
-    if (typeof day == 'number') {
-        const path = join(DAYS_FOLDER, `./${display_day(day)}`);
-
-        await ensureDir(path);
-        await Deno.writeTextFile(
-            join(path, './main.ts'),
-            dedent`
-                import { day } from '../../utils.ts';
-
-                export default day(async () => {
-                    console.log('Day ${display_day(day)}');
-                });
-            `,
-        );
-
-        return new Day(day, path);
-    }
-
-    return day;
-}
+const DAYS_FOLDER = join(import.meta.dirname!, './days');
+const CURRENT_DAY = new Date().getDate();
 
 intro('Advent of Code 2024');
 
@@ -128,7 +76,52 @@ for await (const f of Deno.readDir(DAYS_FOLDER)) {
     }
 }
 
-const day = await get_day(days_map);
+const args = parseArgs(Deno.args);
+let day = days_map.get(args._.at(0) as number) || null;
+
+if (!day) {
+    const options: SelectOptions<Day | number>['options'] = [];
+
+    for (let i = 1; i <= 24; i++) {
+        if (days_map.has(i)) {
+            const day = days_map.get(i)!;
+            options.push({ label: `${day}`, value: day });
+        } else if (i <= CURRENT_DAY) {
+            options.push({
+                label: `Create ${display_day(i)}`,
+                hint: `Day missing, do you want to create it?`,
+                value: i,
+            });
+        }
+    }
+
+    const choice = await select<Day | number>({
+        message: 'Please pick a day to run',
+        options,
+    });
+
+    handle_cancel(choice);
+
+    if (typeof choice == 'number') {
+        const path = join(DAYS_FOLDER, `./${display_day(choice)}`);
+
+        await ensureDir(path);
+        await Deno.writeTextFile(
+            join(path, './main.ts'),
+            dedent`
+                import { day } from '../../utils.ts';
+    
+                export default day(async () => {
+                    console.log('Day ${display_day(choice)}');
+                });
+            `,
+        );
+
+        day = new Day(choice, path);
+    } else {
+        day = choice;
+    }
+}
 
 outro(`Running day ${day}...`);
 
