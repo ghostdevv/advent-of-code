@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "advent-of-code-2025"
+name = "day-01"
 version = "0.1.0"
