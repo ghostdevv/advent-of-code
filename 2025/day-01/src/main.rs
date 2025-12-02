@@ -1,6 +1,5 @@
 use std::fmt;
 
-
 const INPUT: &str = include_str!("./input.txt");
 
 enum Rotation {
@@ -12,7 +11,7 @@ impl fmt::Display for Rotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Left(num) => write!(f, "L{}", num),
-            Self::Right(num) => write!(f, "R{}", num)
+            Self::Right(num) => write!(f, "R{}", num),
         }
     }
 }
@@ -49,8 +48,8 @@ fn main() {
                     if position == 0 {
                         part_two_zeros += 1;
                     }
-                 }
-             },
+                }
+            }
             Rotation::Right(degrees) => {
                 for _ in 0..degrees {
                     position = if position == 99 { 0 } else { position + 1 };
@@ -59,7 +58,7 @@ fn main() {
                         part_two_zeros += 1;
                     }
                 }
-            },
+            }
         }
 
         if position == 0 {
