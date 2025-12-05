@@ -2,34 +2,40 @@ use std::ops::RangeInclusive;
 
 const INPUT: &str = include_str!("./input.txt");
 
-/// Flatten a vec of ranges into smaller non-overlapping vec
-fn simplify_ranges(mut ranges: Vec<RangeInclusive<i64>>) -> Vec<RangeInclusive<i64>> {
-    ranges.sort_by_key(|range| *range.start());
+trait RangeMerging {
+    fn merge_to_disjoint(self) -> Vec<RangeInclusive<i64>>;
+}
 
-    let mut new_ranges = Vec::<RangeInclusive<i64>>::new();
-    let mut current = ranges[0].to_owned();
+impl RangeMerging for Vec<RangeInclusive<i64>> {
+    /// Merge ranges to non-overlapping (disjoint) ranges
+    fn merge_to_disjoint(mut self) -> Vec<RangeInclusive<i64>> {
+        self.sort_by_key(|range| *range.start());
 
-    for range in ranges.into_iter().skip(1) {
-        if current.end() < range.start() {
-            new_ranges.push(current);
-            current = range;
-            continue;
+        let mut new_ranges = Vec::<RangeInclusive<i64>>::new();
+        let mut current = self[0].to_owned();
+
+        for range in self.into_iter().skip(1) {
+            if current.end() < range.start() {
+                new_ranges.push(current);
+                current = range;
+                continue;
+            }
+
+            if current.end() >= range.start() {
+                let new_end = if current.end() > range.end() {
+                    current.end()
+                } else {
+                    range.end()
+                };
+
+                current = *current.start()..=*new_end;
+            }
         }
 
-        if current.end() >= range.start() {
-            let new_end = if current.end() > range.end() {
-                current.end()
-            } else {
-                range.end()
-            };
+        new_ranges.push(current.to_owned());
 
-            current = *current.start()..=*new_end;
-        }
+        return new_ranges;
     }
-
-    new_ranges.push(current.to_owned());
-
-    return new_ranges;
 }
 
 fn main() {
@@ -55,9 +61,8 @@ fn main() {
 
             start..=end
         })
-        .collect::<Vec<_>>();
-
-    let fresh = simplify_ranges(fresh);
+        .collect::<Vec<_>>()
+        .merge_to_disjoint();
 
     let available = available
         .trim()
