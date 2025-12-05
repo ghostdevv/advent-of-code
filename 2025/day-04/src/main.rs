@@ -104,7 +104,13 @@ impl Grid {
                         }
                     }
 
-                    strs.push(if conflicts < 4 { accessible += 1; removable += 1; "x" } else { "@" })
+                    strs.push(if conflicts < 4 {
+                        accessible += 1;
+                        removable += 1;
+                        "x"
+                    } else {
+                        "@"
+                    })
                 }
             }
         }
@@ -148,8 +154,7 @@ impl<'a> Iterator for GridIntoIterator<'a> {
 }
 
 fn main() {
-    let mut grid = Grid::from_str(INPUT)
-        .flim_flam();
+    let mut grid = Grid::from_str(INPUT).flim_flam();
 
     let part_one = grid.0;
 
@@ -159,7 +164,7 @@ fn main() {
 
     let mut total_removed = 0;
 
-    while grid.0 != 0    {
+    while grid.0 != 0 {
         total_removed += grid.1;
         grid = Grid::from_str(&grid.2.replace("x", ".")).flim_flam();
         println!("Removed {}\n{}", grid.1, grid.2);
