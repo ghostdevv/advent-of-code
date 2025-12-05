@@ -1,5 +1,16 @@
 const INPUT: &str = include_str!("./input.txt");
 
+const DIRECTIONS: [(i32, i32); 8] = [
+    (-1, -1), // top left
+    (0, -1),  // top
+    (1, -1),  // top right
+    (1, 0),   // right
+    (1, 1),   // bottom right
+    (0, 1),   // bottom
+    (-1, 1),  // bottom left
+    (-1, 0),  // left
+];
+
 #[derive(Debug)]
 enum Space {
     Paper,
@@ -62,6 +73,44 @@ impl Grid {
 
         None
     }
+
+    fn flim_flam(&self) -> (i32, i32, String) {
+        let mut strs = Vec::<&str>::new();
+        let mut accessible = 0;
+        let mut removable = 0;
+
+        for (x, y, space) in self.into_iter() {
+            if x == 0 && y != 0 {
+                strs.push("\n");
+            }
+
+            match space {
+                Space::Empty => strs.push("."),
+                Space::Paper => {
+                    let mut conflicts = 0;
+                    for direction in DIRECTIONS {
+                        let dx = (x as i32) + direction.0;
+                        let dy = (y as i32) + direction.1;
+
+                        if let Some(space) = self.get_with_neg(dx, dy) {
+                            match space {
+                                Space::Paper => conflicts += 1,
+                                _ => {}
+                            }
+                        }
+
+                        if conflicts >= 4 {
+                            break;
+                        }
+                    }
+
+                    strs.push(if conflicts < 4 { accessible += 1; removable += 1; "x" } else { "@" })
+                }
+            }
+        }
+
+        (accessible, removable, strs.join(""))
+    }
 }
 
 struct GridIntoIterator<'a> {
@@ -98,52 +147,25 @@ impl<'a> Iterator for GridIntoIterator<'a> {
     }
 }
 
-const DIRECTIONS: [(i32, i32); 8] = [
-    (-1, -1), // top left
-    (0, -1),  // top
-    (1, -1),  // top right
-    (1, 0),   // right
-    (1, 1),   // bottom right
-    (0, 1),   // bottom
-    (-1, 1),  // bottom left
-    (-1, 0),  // left
-];
-
 fn main() {
-    let grid = Grid::from_str(INPUT);
-    let mut accessible = 0;
+    let mut grid = Grid::from_str(INPUT)
+        .flim_flam();
 
-    for (x, y, space) in grid.into_iter() {
-        if x == 0 && y != 0 {
-            print!("\n")
-        }
+    let part_one = grid.0;
 
-        match space {
-            Space::Empty => print!("."),
-            Space::Paper => {
-                let mut conflicts = 0;
-                for direction in DIRECTIONS {
-                    let dx = (x as i32) + direction.0;
-                    let dy = (y as i32) + direction.1;
+    println!("{}", grid.2);
+    println!("=======================");
+    println!("Part One: {}\n\n", part_one);
 
-                    if let Some(space) = grid.get_with_neg(dx, dy) {
-                        match space {
-                            Space::Paper => conflicts += 1,
-                            _ => {}
-                        }
-                    }
+    let mut total_removed = 0;
 
-                    if conflicts >= 4 {
-                        break;
-                    }
-                }
-
-                print!("{}", if conflicts < 4 { accessible += 1; "x" } else { "@" })
-            }
-        }
+    while grid.0 != 0    {
+        total_removed += grid.1;
+        grid = Grid::from_str(&grid.2.replace("x", ".")).flim_flam();
+        println!("Removed {}\n{}", grid.1, grid.2);
     }
 
-    print!("\n\n");
     println!("=======================");
-    println!("Part One: {}", accessible);
+    println!("Part One: {}", part_one);
+    println!("Part Two: {}", total_removed);
 }
