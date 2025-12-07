@@ -216,23 +216,26 @@ fn part_one(mut grid: Grid) -> i32 {
     let start_pos = grid.start_pos().expect("unable to find start position");
     trace_beam(grid.rows_mut(), start_pos.0, start_pos.1);
 
-    grid.rows().iter().enumerate().fold(0, |mut total, (row_i, row)| {
-        if &grid.rows().len() <= &(row_i + 1) {
-            return total;
-        }
-
-        let next_row = &grid.rows()[row_i + 1];
-
-        for (square_i, square) in row.squares().iter().enumerate() {
-            if let Square::Beam = square
-                && let Some(Square::Splitter) = next_row.square_at(square_i)
-            {
-                total += 1;
+    grid.rows()
+        .iter()
+        .enumerate()
+        .fold(0, |mut total, (row_i, row)| {
+            if &grid.rows().len() <= &(row_i + 1) {
+                return total;
             }
-        }
 
-        total
-    })
+            let next_row = &grid.rows()[row_i + 1];
+
+            for (square_i, square) in row.squares().iter().enumerate() {
+                if let Square::Beam = square
+                    && let Some(Square::Splitter) = next_row.square_at(square_i)
+                {
+                    total += 1;
+                }
+            }
+
+            total
+        })
 }
 
 fn part_two(grid: Grid) -> usize {
