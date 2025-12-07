@@ -122,7 +122,6 @@ fn main() {
             })
             .collect::<Vec<_>>();
 
-
         Some(Column { operation, content })
     })
     .collect::<Vec<_>>();
